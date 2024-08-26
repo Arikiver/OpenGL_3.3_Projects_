@@ -27,5 +27,8 @@
     <ClCompile Include="cube3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="tutorialFCC.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
