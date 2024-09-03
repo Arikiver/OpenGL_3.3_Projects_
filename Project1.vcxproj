@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="anime.cpp" />
+    <ClCompile Include="Bresenham.cpp" />
     <ClCompile Include="cube3D.cpp" />
     <ClCompile Include="DDA.cpp" />
     <ClCompile Include="glad.c" />

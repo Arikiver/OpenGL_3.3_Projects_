@@ -1,171 +1,171 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <iostream>
-#include <vector>
-#include <cmath>
+// #include <glad/glad.h>
+// #include <GLFW/glfw3.h>
+// #include <iostream>
+// #include <vector>
+// #include <cmath>
 
-const char* vertexShaderSource = R"glsl(
-   #version 330 core
-   layout(location = 0) in vec2 aPos;
-   
-   void main()
-   {
-       gl_Position = vec4(aPos, 0.0, 1.0);
-   }
-)glsl";
+// const char* vertexShaderSource = R"glsl(
+//    #version 330 core
+//    layout(location = 0) in vec2 aPos;
 
-const char* fragmentShaderSource = R"glsl(
-   #version 330 core
-   out vec4 FragColor;
-   
-   void main()
-   {
-       FragColor = vec4(1.0, 0.0, 0.0, 1.0); // Red color
-   }
-)glsl";
+//    void main()
+//    {
+//        gl_Position = vec4(aPos, 0.0, 1.0);
+//    }
+// )glsl";
 
-std::vector<float> points; // Store points in this vector
-bool lineReady = false;
+// const char* fragmentShaderSource = R"glsl(
+//    #version 330 core
+//    out vec4 FragColor;
 
-void addLinePoints(float x1, float y1, float x2, float y2) {
-    float m = (y2 - y1) / (x2 - x1); // Slope
-    float c = y1 - m * x1;           // Intercept
+//    void main()
+//    {
+//        FragColor = vec4(1.0, 0.0, 0.0, 1.0); // Red color
+//    }
+// )glsl";
 
-    float xStep = 0.001f; // step for drawing the line
-    if (x2 < x1) xStep = -xStep; // Reverse step if moving left
+// std::vector<float> points; // Store points in this vector
+// bool lineReady = false;
 
-    for (float x = x1; (xStep > 0 ? x <= x2 : x >= x2); x += xStep) {
-        float y = m * x + c;
-        points.push_back(x);
-        points.push_back(y);
-    }
-}
+// void addLinePoints(float x1, float y1, float x2, float y2) {
+//     float m = (y2 - y1) / (x2 - x1); // Slope
+//     float c = y1 - m * x1;           // Intercept
 
-// Mouse callback to capture points on click
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        double xpos, ypos;
-        glfwGetCursorPos(window, &xpos, &ypos);
+//     float xStep = 0.001f; // step for drawing the line
+//     if (x2 < x1) xStep = -xStep; // Reverse step if moving left
 
-        int width, height;
-        glfwGetWindowSize(window, &width, &height);
-        float x = (2.0f * xpos) / width - 1.0f;
-        float y = 1.0f - (2.0f * ypos) / height;
+//     for (float x = x1; (xStep > 0 ? x <= x2 : x >= x2); x += xStep) {
+//         float y = m * x + c;
+//         points.push_back(x);
+//         points.push_back(y);
+//     }
+// }
 
-        points.push_back(x);
-        points.push_back(y);
+// // Mouse callback to capture points on click
+// void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+//     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+//         double xpos, ypos;
+//         glfwGetCursorPos(window, &xpos, &ypos);
 
-        if (points.size() >= 4) {
-            // We have 2 points, so draw a line
-            float x1 = points[points.size() - 4];
-            float y1 = points[points.size() - 3];
-            float x2 = points[points.size() - 2];
-            float y2 = points[points.size() - 1];
+//         int width, height;
+//         glfwGetWindowSize(window, &width, &height);
+//         float x = (2.0f * xpos) / width - 1.0f;
+//         float y = 1.0f - (2.0f * ypos) / height;
 
-            addLinePoints(x1, y1, x2, y2);
-            lineReady = true;
-        }
-    }
-}
+//         points.push_back(x);
+//         points.push_back(y);
 
-unsigned int compileShaders() {
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
-    glCompileShader(vertexShader);
+//         if (points.size() >= 4) {
+//             // We have 2 points, so draw a line
+//             float x1 = points[points.size() - 4];
+//             float y1 = points[points.size() - 3];
+//             float x2 = points[points.size() - 2];
+//             float y2 = points[points.size() - 1];
 
-    int success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
+//             addLinePoints(x1, y1, x2, y2);
+//             lineReady = true;
+//         }
+//     }
+// }
 
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
-    glCompileShader(fragmentShader);
+// unsigned int compileShaders() {
+//     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+//     glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
+//     glCompileShader(vertexShader);
 
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
+//     int success;
+//     char infoLog[512];
+//     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+//     if (!success) {
+//         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+//         std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+//     }
 
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
+//     unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+//     glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
+//     glCompileShader(fragmentShader);
 
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    }
+//     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+//     if (!success) {
+//         glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+//         std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+//     }
 
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+//     unsigned int shaderProgram = glCreateProgram();
+//     glAttachShader(shaderProgram, vertexShader);
+//     glAttachShader(shaderProgram, fragmentShader);
+//     glLinkProgram(shaderProgram);
 
-    return shaderProgram;
-}
+//     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+//     if (!success) {
+//         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+//         std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+//     }
 
-int main() {
-    if (!glfwInit()) {
-        std::cerr << "Failed to initialize GLFW\n";
-        return -1;
-    }
+//     glDeleteShader(vertexShader);
+//     glDeleteShader(fragmentShader);
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+//     return shaderProgram;
+// }
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Plot Points on Mouse Click", NULL, NULL);
-    if (!window) {
-        std::cerr << "Failed to create GLFW window\n";
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
+// int main() {
+//     if (!glfwInit()) {
+//         std::cerr << "Failed to initialize GLFW\n";
+//         return -1;
+//     }
 
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cerr << "Failed to initialize GLAD\n";
-        return -1;
-    }
+//     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+//     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+//     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    glViewport(0, 0, 800, 600);
-    glfwSetMouseButtonCallback(window, mouse_button_callback);
+//     GLFWwindow* window = glfwCreateWindow(800, 600, "Plot Points on Mouse Click", NULL, NULL);
+//     if (!window) {
+//         std::cerr << "Failed to create GLFW window\n";
+//         glfwTerminate();
+//         return -1;
+//     }
+//     glfwMakeContextCurrent(window);
 
-    unsigned int shaderProgram = compileShaders();
-    glUseProgram(shaderProgram);
+//     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+//         std::cerr << "Failed to initialize GLAD\n";
+//         return -1;
+//     }
 
-    unsigned int VBO, VAO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
+//     glViewport(0, 0, 800, 600);
+//     glfwSetMouseButtonCallback(window, mouse_button_callback);
 
-    while (!glfwWindowShouldClose(window)) {
-        glClear(GL_COLOR_BUFFER_BIT);
+//     unsigned int shaderProgram = compileShaders();
+//     glUseProgram(shaderProgram);
 
-        if (lineReady) {
-            glBindVertexArray(VAO);
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * points.size(), points.data(), GL_DYNAMIC_DRAW);
+//     unsigned int VBO, VAO;
+//     glGenVertexArrays(1, &VAO);
+//     glGenBuffers(1, &VBO);
 
-            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-            glEnableVertexAttribArray(0);
+//     while (!glfwWindowShouldClose(window)) {
+//         glClear(GL_COLOR_BUFFER_BIT);
 
-            glDrawArrays(GL_POINTS, 0, points.size() / 2);
+//         if (lineReady) {
+//             glBindVertexArray(VAO);
+//             glBindBuffer(GL_ARRAY_BUFFER, VBO);
+//             glBufferData(GL_ARRAY_BUFFER, sizeof(float) * points.size(), points.data(), GL_DYNAMIC_DRAW);
 
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-            glBindVertexArray(0);
-        }
+//             glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+//             glEnableVertexAttribArray(0);
 
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
+//             glDrawArrays(GL_POINTS, 0, points.size() / 2);
 
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteProgram(shaderProgram);
+//             glBindBuffer(GL_ARRAY_BUFFER, 0);
+//             glBindVertexArray(0);
+//         }
 
-    glfwTerminate();
-    return 0;
-}
+//         glfwSwapBuffers(window);
+//         glfwPollEvents();
+//     }
+
+//     glDeleteVertexArrays(1, &VAO);
+//     glDeleteBuffers(1, &VBO);
+//     glDeleteProgram(shaderProgram);
+
+//     glfwTerminate();
+//     return 0;
+// }
