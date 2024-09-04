@@ -153,6 +153,7 @@
     <ClCompile Include="DDA.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="SimpleHouse.cpp" />
+    <ClCompile Include="temp.cpp" />
     <ClCompile Include="tutorialFCC.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

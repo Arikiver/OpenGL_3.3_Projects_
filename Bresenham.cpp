@@ -43,7 +43,7 @@ void bresenhamLine(float x1, float y1, float x2, float y2, int width, int height
     int dy = std::abs(y2 - y1);
     int sx = (x1 < x2) ? 1 : -1;
     int sy = (y1 < y2) ? 1 : -1;
-    int err = dx - dy;
+    int p = dx - dy;
 
     while (true) {
         // Store the current point after converting to NDC
@@ -55,14 +55,14 @@ void bresenhamLine(float x1, float y1, float x2, float y2, int width, int height
             break;
         }
 
-        // Calculate the error term and adjust points accordingly
-        int e2 = 2 * err;
+        // Calculate the por term and adjust points accordingly
+        int e2 = 2 * p;
         if (e2 > -dy) {
-            err -= dy;
+            p -= dy;
             x1 += sx;
         }
         if (e2 < dx) {
-            err += dx;
+            p += dx;
             y1 += sy;
         }
     }
@@ -79,8 +79,7 @@ unsigned int compileShaders() {
     int success;
     char infoLog[512];
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
+    if (!success) {
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
         std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
@@ -92,8 +91,7 @@ unsigned int compileShaders() {
 
     // Check for compile errors
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
+    if (!success) {
         glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
         std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
@@ -129,16 +127,23 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
         // Store the point
         clickedPoints.emplace_back(xpos, ypos);
 
+        // Window dimensions
+        int width, height;
+        glfwGetWindowSize(window, &width, &height);
+
         // If there are two points, draw a line
         if (clickedPoints.size() == 2) {
-            // Window dimensions
-            int width, height;
-            glfwGetWindowSize(window, &width, &height);
+            // Convert to Cartesian coordinates
+            float ndcX1 = screenToNDCX(static_cast<float>(clickedPoints[0].first), width);
+            float ndcY1 = screenToNDCX(static_cast<float>(height - clickedPoints[0].second), height);
+            float ndcX2 = screenToNDCX(static_cast<float>(clickedPoints[1].first), width);
+            float ndcY2 = screenToNDCX(static_cast<float>(height - clickedPoints[1].second), height);
+            // Print the coordinates of the line drawn
+            std::cout << "line drawn from: (" << ndcX1 << ", " << ndcY1 << ") to (" << ndcX2 << ", " << ndcY2 << ") where the equation of the line drawn is: \n";
+            std::cout << "y = " << (ndcY2 - ndcY1) / (ndcX2 - ndcX1) << "x + " << ndcY1 - (ndcY2 - ndcY1) / (ndcX2 - ndcX1) * ndcX1 << "\n";
 
             // Draw the line using Bresenham's algorithm
-            bresenhamLine(clickedPoints[0].first, clickedPoints[0].second,
-                clickedPoints[1].first, clickedPoints[1].second,
-                width, height);
+            bresenhamLine(clickedPoints[0].first, clickedPoints[0].second, clickedPoints[1].first, clickedPoints[1].second, width, height);
 
             clickedPoints.clear(); // Clear points for the next line
         }
@@ -158,7 +163,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create a windowed mode window and its OpenGL context
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Bresenham Line Drawing", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(800, 800, "Bresenham Line Drawing", NULL, NULL);
     if (!window) {
         std::cerr << "Failed to create GLFW window\n";
         glfwTerminate();
@@ -173,7 +178,7 @@ int main() {
     }
 
     // Set viewport
-    glViewport(0, 0, 800, 600);
+    glViewport(0, 0, 800, 800);
 
     // Compile and use shaders
     unsigned int shaderProgram = compileShaders();
@@ -186,6 +191,12 @@ int main() {
 
     glBindVertexArray(VAO);
 
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * points.size(), points.data(), GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
     // Register mouse button callback
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
 
@@ -196,7 +207,7 @@ int main() {
 
         // Update VBO with new points data
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * points.size(), points.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * points.size(), points.data(), GL_DYNAMIC_DRAW);
 
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
