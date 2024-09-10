@@ -1,0 +1,30 @@
+OpenGL - A cross platform Graphics API which allows you to render 3D and 2D scenes using your computer's GPU.
+
+General programming is done using CPUs, which are great at doing a lot of tasks in a linear fashion (one after the other).
+But,
+when it comes to Graphics, most of the tasks are similar and don't need each other's data to complete themselves. This is why we utilize GPUs for rendering graphics more efficiently,
+as they perform tasks in a parallel manner (doing all of them at the same time).
+
+OpenGL is simply a way for us to communicate between the CPU and the GPU.
+
+Buffers: simply a space of storage, used to store pixels or other data. Buffers are used to send data to the GPU to compute and display animations and images.
+
+Notes:
+
+-- You have to tell OpenGL what version you are using.
+-- You have to specify which OpenGL profiles you will be using, which is sort of like a package of functions, which are:
+        1) Core - contains all the modern functions.
+        2) Compatibility - contains both modern and outdated functions.
+-- Add error checking very thoroughly (use functions like glGetError()).
+-- Tell GLFW what window you will be using.
+-- Remember to delete resources (like the window, GLFW itself, etc.) when they are not in use anymore.
+-- Glad needs to be loaded using the "gladLoadGL()" function.
+-- Glad is responsible for loading OpenGL functions, not for coloring or rendering directly.
+-- OpenGL displays images as a grid of pixels on your screen, with coordinates starting at (0,0) on the top-left and ending at (window.x, window.y) on the bottom-right.
+-- OpenGL loads the screen from the top-left to the bottom-right in an ordered fashion.
+-- While the program is displaying a frame on your screen, the next frame is being rendered and stored in the background in a buffer, called the "back buffer."
+-- There are two types of buffers:
+        1) Front buffer: contains the frame currently being displayed.
+        2) Back buffer: contains and writes the frame which needs to be displayed next.
+   When the frame ends, the buffers swap. The image that was previously being loaded in the back buffer now gets displayed on the screen, and the previous frame is overwritten
+   to render the next frame.

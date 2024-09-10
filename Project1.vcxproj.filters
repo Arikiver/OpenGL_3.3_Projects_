@@ -36,8 +36,13 @@
     <ClCompile Include="Bresenham.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="temp.cpp">
+    <ClCompile Include="ellipseGen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="OpenGL_Tutorial.txt">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

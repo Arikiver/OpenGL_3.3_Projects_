@@ -151,9 +151,13 @@
     <ClCompile Include="Bresenham.cpp" />
     <ClCompile Include="cube3D.cpp" />
     <ClCompile Include="DDA.cpp" />
+    <ClCompile Include="ellipseGen.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="SimpleHouse.cpp" />
     <ClCompile Include="tutorialFCC.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="OpenGL_Tutorial.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
