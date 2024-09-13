@@ -1,23 +1,27 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <vector>
 #include <cmath>
 
-const unsigned int WIDTH = 800;
-const unsigned int HEIGHT = 600;
+// Screen size
+const int SCREEN_WIDTH = 800;
+const int SCREEN_HEIGHT = 600;
 
-float a = 0.5f; // Semi-major axis
-float b = 0.25f; // Semi-minor axis
-bool isDragging = false; // Track if the mouse is being dragged
-double prevMouseX = 0.0, prevMouseY = 0.0;
+// Ellipse parameters
+float centerX = SCREEN_WIDTH / 2;
+float centerY = SCREEN_HEIGHT / 2;
+float rx = 200; // semi-major axis (initial)
+float ry = 100; // semi-minor axis (initial)
+float initialRx = rx;
+float initialRy = ry;
 
 // Vertex Shader source
 const char* vertexShaderSource = R"(
     #version 330 core
-    layout (location = 0) in vec2 aPos;
-
+    layout(location = 0) in vec2 aPos;
     void main() {
-        gl_Position = vec4(aPos, 0.0, 1.0);
+        gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);
     }
 )";
 
@@ -25,18 +29,18 @@ const char* vertexShaderSource = R"(
 const char* fragmentShaderSource = R"(
     #version 330 core
     out vec4 FragColor;
-
     void main() {
-        FragColor = vec4(1.0, 1.0, 1.0, 1.0);  // White color for the ellipse
+        FragColor = vec4(1.0, 0.5, 0.2, 1.0); // Orange color
     }
 )";
 
-// Function to compile shaders
-unsigned int compileShader(unsigned int type, const char* source) {
-    unsigned int shader = glCreateShader(type);
+// Function to compile shader and check for errors
+GLuint compileShader(GLenum type, const char* source) {
+    GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, nullptr);
     glCompileShader(shader);
 
+    // Check for shader compile errors
     int success;
     char infoLog[512];
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
@@ -44,80 +48,105 @@ unsigned int compileShader(unsigned int type, const char* source) {
         glGetShaderInfoLog(shader, 512, nullptr, infoLog);
         std::cerr << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
-
     return shader;
 }
 
-// Function to create shader program
-unsigned int createShaderProgram() {
-    unsigned int vertexShader = compileShader(GL_VERTEX_SHADER, vertexShaderSource);
-    unsigned int fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
+// Function to plot the points of the ellipse
+void plotEllipsePoints(float xc, float yc, float x, float y, std::vector<float>& vertices) {
+    // Normalize coordinates to the range [-1, 1]
+    vertices.push_back((xc + x) / SCREEN_WIDTH * 2 - 1);
+    vertices.push_back((yc + y) / SCREEN_HEIGHT * 2 - 1);
 
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
+    vertices.push_back((xc - x) / SCREEN_WIDTH * 2 - 1);
+    vertices.push_back((yc + y) / SCREEN_HEIGHT * 2 - 1);
 
-    int success;
-    char infoLog[512];
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
-        std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    }
+    vertices.push_back((xc + x) / SCREEN_WIDTH * 2 - 1);
+    vertices.push_back((yc - y) / SCREEN_HEIGHT * 2 - 1);
 
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    return shaderProgram;
+    vertices.push_back((xc - x) / SCREEN_WIDTH * 2 - 1);
+    vertices.push_back((yc - y) / SCREEN_HEIGHT * 2 - 1);
 }
 
-// Function to generate ellipse vertices
-void generateEllipse(float* vertices, float x_center, float y_center, float a, float b, int num_segments) {
-    for (int i = 0; i < num_segments; ++i) {
-        float theta = 2.0f * 3.1415926f * float(i) / float(num_segments);  // Current angle
-        float x = a * cosf(theta);  // X coordinate
-        float y = b * sinf(theta);  // Y coordinate
-        vertices[2 * i] = x + x_center;
-        vertices[2 * i + 1] = y + y_center;
+// Function to generate the ellipse points using Midpoint Ellipse Algorithm
+void generateEllipse(float xc, float yc, float rx, float ry, std::vector<float>& vertices) {
+    float x = 0;
+    float y = ry;
+    float rx2 = rx * rx;
+    float ry2 = ry * ry;
+    float tworx2 = 2 * rx2;
+    float twory2 = 2 * ry2;
+    float p = ry2 - (rx2 * ry) + (0.25 * rx2);
+    float px = 0;
+    float py = tworx2 * y;
+
+    // Region 1
+    while (px < py) {
+        plotEllipsePoints(xc, yc, x, y, vertices);
+        x++;
+        px += twory2;
+        if (p < 0) {
+            p += ry2 + px;
+        }
+        else {
+            y--;
+            py -= tworx2;
+            p += ry2 + px - py;
+        }
+    }
+
+    // Region 2
+    p = ry2 * (x + 0.5f) * (x + 0.5f) + rx2 * (y - 1) * (y - 1) - rx2 * ry2;
+    while (y > 0) {
+        plotEllipsePoints(xc, yc, x, y, vertices);
+        y--;
+        py -= tworx2;
+        if (p > 0) {
+            p += rx2 - py;
+        }
+        else {
+            x++;
+            px += twory2;
+            p += rx2 - py + px;
+        }
     }
 }
 
-// Mouse callback for dragging
+// Global variables for mouse control and sinusoidal animation
+bool isDragging = false;
+bool animate = false;  // For sinusoidal animation
+double startX, startY;
+float animTime = 0.0f; // For sinusoidal animation time
+float animSpeed = 0.0005f; // Speed of the sinusoidal deformation
+
+// Mouse callback for clicking and dragging
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        isDragging = true;
-        glfwGetCursorPos(window, &prevMouseX, &prevMouseY);
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (action == GLFW_PRESS) {
+            isDragging = true;
+            glfwGetCursorPos(window, &startX, &startY);
+        }
+        else if (action == GLFW_RELEASE) {
+            isDragging = false;
+        }
     }
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
-        isDragging = false;
+
+    // Toggle animation with right mouse button
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+        animate = !animate;  // Toggle animation state
     }
 }
 
-// Mouse movement callback
+// Mouse motion callback to update the ellipse radius
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
     if (isDragging) {
-        // Calculate the change in mouse position
-        double dx = xpos - prevMouseX;
-        double dy = ypos - prevMouseY;
+        double deltaX = xpos - startX;
+        double deltaY = ypos - startY;
 
-        // Adjust a (semi-major axis) with horizontal movement and b (semi-minor axis) with vertical movement
-        a += dx / WIDTH;
-        b -= dy / HEIGHT;
-
-        // Clamp the values to avoid negative or zero radii
-        if (a < 0.05f) a = 0.05f;
-        if (b < 0.05f) b = 0.05f;
-
-        // Update previous mouse position
-        prevMouseX = xpos;
-        prevMouseY = ypos;
+        rx = initialRx + deltaX;
+        ry = initialRy - deltaY; // Invert Y axis since OpenGL's Y increases upwards
+        if (rx < 1) rx = 1; // Prevent shrinking too much
+        if (ry < 1) ry = 1;
     }
-}
-
-// Callback to resize the OpenGL viewport when the window is resized
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
 }
 
 int main() {
@@ -127,86 +156,109 @@ int main() {
         return -1;
     }
 
-    // Configure GLFW: OpenGL version 3.3, Core Profile
+    // Set GLFW version to 3.3 and core profile
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    // Create a window
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Ellipse Drawing - OpenGL", nullptr, nullptr);
+    // Create a GLFW window
+    GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Midpoint Ellipse Algorithm with Sinusoidal Deformation", nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
 
-    // Make the OpenGL context current
+    // Make the window's context current
     glfwMakeContextCurrent(window);
 
-    // Load OpenGL function pointers with GLAD
+    // Load OpenGL functions using GLAD
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
 
-    // Set the OpenGL viewport and register the resize callback
-    glViewport(0, 0, WIDTH, HEIGHT);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-    // Set up mouse input callbacks
+    // Set mouse callback functions
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetCursorPosCallback(window, cursor_position_callback);
 
-    // Compile and link shaders
-    unsigned int shaderProgram = createShaderProgram();
+    // Build and compile the shader program
+    GLuint vertexShader = compileShader(GL_VERTEX_SHADER, vertexShaderSource);
+    GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
 
-    // Generate the ellipse vertices
-    const int num_segments = 100;
-    float vertices[2 * num_segments];  // 2D vertices: x and y for each segment
+    // Link shaders to a shader program
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
 
-    // Create and bind VAO and VBO
-    unsigned int VAO, VBO;
+    // Check for linking errors
+    int success;
+    char infoLog[512];
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
+        std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+    }
+
+    // Delete the shaders as they're linked into the program now and no longer needed
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    // Create a VAO and VBO
+    GLuint VAO, VBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
-    // Main render loop
+    // Bind VAO
+    glBindVertexArray(VAO);
+
+    // Main loop
     while (!glfwWindowShouldClose(window)) {
         // Process input
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             glfwSetWindowShouldClose(window, true);
 
-        // Update ellipse vertices dynamically
-        generateEllipse(vertices, 0.0f, 0.0f, a, b, num_segments);
+        // If the animation is enabled, update the ellipse with a sinusoidal function
+        if (animate) {
+            animTime += animSpeed * glfwGetTime();
+            rx = initialRx + 50 * std::sin(animTime);  // Sinusoidal deformation
+            ry = initialRy + 50 * std::cos(animTime);  // Sinusoidal deformation
+        }
 
-        // Bind and buffer vertex data
-        glBindVertexArray(VAO);
+        // Generate ellipse points dynamically
+        std::vector<float> ellipseVertices;
+        generateEllipse(centerX, centerY, rx, ry, ellipseVertices);
+
+        // Bind and set VBO data
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, ellipseVertices.size() * sizeof(float), ellipseVertices.data(), GL_DYNAMIC_DRAW);
 
-        // Vertex attribute setup
+        // Configure vertex attribute
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
 
-        // Clear the screen
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        // Render
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Use the shader program and draw the ellipse
+        // Draw the ellipse
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
-        glDrawArrays(GL_LINE_LOOP, 0, num_segments);
-        glBindVertexArray(0);
+        glDrawArrays(GL_POINTS, 0, ellipseVertices.size() / 2);
 
         // Swap buffers and poll events
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    // Clean up and exit
+    // Cleanup
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteProgram(shaderProgram);
-    glfwDestroyWindow(window);
+
+    // Terminate GLFW
     glfwTerminate();
     return 0;
 }
+
