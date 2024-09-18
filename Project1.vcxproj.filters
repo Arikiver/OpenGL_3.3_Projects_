@@ -39,6 +39,15 @@
     <ClCompile Include="ellipseGen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="VIVA1.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="circleGen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="doubleClick.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="OpenGL_Tutorial.txt">

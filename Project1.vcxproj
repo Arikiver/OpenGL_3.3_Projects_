@@ -149,12 +149,15 @@
   <ItemGroup>
     <ClCompile Include="anime.cpp" />
     <ClCompile Include="Bresenham.cpp" />
+    <ClCompile Include="circleGen.cpp" />
     <ClCompile Include="cube3D.cpp" />
     <ClCompile Include="DDA.cpp" />
     <ClCompile Include="ellipseGen.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="SimpleHouse.cpp" />
+    <ClCompile Include="doubleClick.cpp" />
     <ClCompile Include="tutorialFCC.cpp" />
+    <ClCompile Include="VIVA1.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="OpenGL_Tutorial.txt" />
