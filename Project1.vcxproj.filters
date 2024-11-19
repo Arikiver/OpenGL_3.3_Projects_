@@ -99,6 +99,9 @@
     <ClCompile Include="3D_trans.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BezierCurve.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="OpenGL_Tutorial.txt">

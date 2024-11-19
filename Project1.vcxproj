@@ -153,6 +153,7 @@
   <ItemGroup>
     <ClCompile Include="3D_trans.cpp" />
     <ClCompile Include="anime.cpp" />
+    <ClCompile Include="BezierCurve.cpp" />
     <ClCompile Include="BoundaryFill.cpp" />
     <ClCompile Include="Bresenham.cpp" />
     <ClCompile Include="circleGen.cpp" />
